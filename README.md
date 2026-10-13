@@ -13,6 +13,16 @@ Late for a meeting? Run `iamlate` and you're in.
 
 All-day events and events you declined are skipped.
 
+If several meetings are on at the same time, `iamlate` asks which one to join with an arrow-key selector (or a macOS dialog when started from a hotkey). Each entry shows time, status, provider, title, recurring or one-time, attendees, organizer, your response, and calendar:
+
+```
+? Several meetings right now. Which one?
+❯ 10:30–11:00  in 3 min      Zoom   Customer call  one-time · 4 people · by Jane Doe · accepted · Work
+  10:00–10:15  1 min ago     Meet   Daily          recurring · 7 people · accepted · Work
+```
+
+One-time meetings come first, since they are usually the ones you can't afford to miss. After that, the meeting closest to now.
+
 ## Install
 
 Requires macOS 14+.
