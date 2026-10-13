@@ -4,8 +4,8 @@
 //! extracts the video link, and joins directly:
 //!   - Zoom   -> zoommtg:// (native app, joins without the browser hop)
 //!   - Teams  -> msteams:   (native app)
-//!   - Meet   -> Chrome, then auto-clicks "Join now" (needs Chrome's
-//!               View > Developer > Allow JavaScript from Apple Events)
+//!   - Meet   -> Chrome, then auto-clicks "Join now" (needs Chrome's View > Developer >
+//!     Allow JavaScript from Apple Events)
 //!   - Webex / others -> opened as-is
 
 use std::process::{Command, ExitCode};
@@ -43,14 +43,18 @@ struct Config {
 
 impl Config {
     fn load() -> Self {
-        let path = std::env::var("HOME").map(|h| format!("{h}/.iamlate.config")).unwrap_or_default();
+        let path = std::env::var("HOME")
+            .map(|h| format!("{h}/.iamlate.config"))
+            .unwrap_or_default();
         let mut config = Config::default();
         for line in std::fs::read_to_string(&path).unwrap_or_default().lines() {
             let line = line.trim();
             if line.starts_with('#') {
                 continue;
             }
-            let Some((key, value)) = line.split_once('=') else { continue };
+            let Some((key, value)) = line.split_once('=') else {
+                continue;
+            };
             let (key, value) = (key.trim(), value.trim().to_string());
             if key == "account" {
                 config.account = Some(value);
@@ -91,7 +95,9 @@ fn main() -> ExitCode {
 
     let store = unsafe { EKEventStore::new() };
     if !request_access(&store) {
-        eprintln!("No calendar access. Grant it in System Settings > Privacy & Security > Calendars.");
+        eprintln!(
+            "No calendar access. Grant it in System Settings > Privacy & Security > Calendars."
+        );
         return ExitCode::FAILURE;
     }
 
@@ -140,11 +146,19 @@ fn join_team_room(config: &Config, name: Option<&str>, dry_run: bool) -> ExitCod
     };
     let Some((title, url)) = room else {
         let known: Vec<&str> = rooms.iter().map(|(n, _)| n.as_str()).collect();
-        eprintln!("Room not found. Add `room.NAME = URL` to {}. Known: {known:?}", config.path);
+        eprintln!(
+            "Room not found. Add `room.NAME = URL` to {}. Known: {known:?}",
+            config.path
+        );
         return ExitCode::FAILURE;
     };
     let (url, kind) = find_link_in(url).unwrap_or((url.clone(), Kind::Other));
-    let m = Meeting { title: title.clone(), starts_in: 0.0, url, kind };
+    let m = Meeting {
+        title: title.clone(),
+        starts_in: 0.0,
+        url,
+        kind,
+    };
     println!("→ {} [{:?}]\n  {}", m.title, m.kind, m.url);
     if !dry_run {
         join(&m);
@@ -183,16 +197,27 @@ fn current_meetings(
         let start = NSDate::dateWithTimeIntervalSinceNow(-12.0 * 3600.0);
         let end = NSDate::dateWithTimeIntervalSinceNow(EARLY_SECS);
         let calendars = calendars.map(NSArray::from_retained_slice);
-        let predicate =
-            store.predicateForEventsWithStartDate_endDate_calendars(&start, &end, calendars.as_deref());
+        let predicate = store.predicateForEventsWithStartDate_endDate_calendars(
+            &start,
+            &end,
+            calendars.as_deref(),
+        );
         store.eventsMatchingPredicate(&predicate)
     };
     if debug {
         let status = unsafe { EKEventStore::authorizationStatusForEntityType(EKEntityType::Event) };
-        eprintln!("auth status: {status:?}, events in window: {}", events.count());
+        eprintln!(
+            "auth status: {status:?}, events in window: {}",
+            events.count()
+        );
         for e in events.iter() {
-            let (title, starts_in) = unsafe { (e.title().to_string(), e.startDate().timeIntervalSinceNow()) };
-            eprintln!("  {:>6.0} min  {title}  link={:?}", starts_in / 60.0, find_link(&e).map(|l| l.1));
+            let (title, starts_in) =
+                unsafe { (e.title().to_string(), e.startDate().timeIntervalSinceNow()) };
+            eprintln!(
+                "  {:>6.0} min  {title}  link={:?}",
+                starts_in / 60.0,
+                find_link(&e).map(|l| l.1)
+            );
         }
     }
 
@@ -211,7 +236,12 @@ fn current_meetings(
             }
             let (url, kind) = find_link(&event)?;
             let title = unsafe { event.title() }.to_string();
-            Some(Meeting { title, starts_in, url, kind })
+            Some(Meeting {
+                title,
+                starts_in,
+                url,
+                kind,
+            })
         })
         .collect()
 }
@@ -247,8 +277,14 @@ fn find_link(event: &Retained<EKEvent>) -> Option<(String, Kind)> {
 fn find_link_in(haystack: &str) -> Option<(String, Kind)> {
     let patterns: [(Kind, &str); 4] = [
         (Kind::Zoom, r"https://[\w.-]*zoom\.us/(?:j|my|w)/[^\s<>]+"),
-        (Kind::Teams, r"https://teams\.(?:microsoft|live)\.com/(?:l/meetup-join|meet)/[^\s<>]+"),
-        (Kind::Meet, r"https://meet\.google\.com/[a-z]{3}-[a-z]{4}-[a-z]{3}"),
+        (
+            Kind::Teams,
+            r"https://teams\.(?:microsoft|live)\.com/(?:l/meetup-join|meet)/[^\s<>]+",
+        ),
+        (
+            Kind::Meet,
+            r"https://meet\.google\.com/[a-z]{3}-[a-z]{4}-[a-z]{3}",
+        ),
         (Kind::Webex, r"https://[\w.-]+\.webex\.com/[^\s<>]+"),
     ];
     for (kind, pattern) in patterns {
@@ -258,12 +294,14 @@ fn find_link_in(haystack: &str) -> Option<(String, Kind)> {
     }
     // Fallback: an explicit event URL that isn't a calendar link.
     let fallback = Regex::new(r"https://(?:whereby\.com|meet\.jit\.si|[\w.-]*gotomeeting\.com|app\.slack\.com/huddle)/[^\s<>]+").unwrap();
-    fallback.find(haystack).map(|m| (clean(m.as_str()), Kind::Other))
+    fallback
+        .find(haystack)
+        .map(|m| (clean(m.as_str()), Kind::Other))
 }
 
 /// Strip trailing punctuation that often sticks to links in notes.
 fn clean(url: &str) -> String {
-    url.trim_end_matches(|c| matches!(c, ')' | '>' | '"' | '\'' | '.' | ',' | ';' | ']'))
+    url.trim_end_matches([')', '>', '"', '\'', '.', ',', ';', ']'])
         .to_string()
 }
 
@@ -295,7 +333,9 @@ fn join_meet(url: &str) {
         open(url);
         return;
     }
-    let _ = Command::new("open").args(["-a", "Google Chrome", url]).status();
+    let _ = Command::new("open")
+        .args(["-a", "Google Chrome", url])
+        .status();
 
     // Click "Join now" / "Ask to join" once the pre-join screen has loaded.
     let script = r#"
@@ -350,6 +390,9 @@ mod tests {
 
     #[test]
     fn trailing_punctuation_is_stripped() {
-        assert_eq!(clean("https://meet.google.com/abc-defg-hij)."), "https://meet.google.com/abc-defg-hij");
+        assert_eq!(
+            clean("https://meet.google.com/abc-defg-hij)."),
+            "https://meet.google.com/abc-defg-hij"
+        );
     }
 }

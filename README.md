@@ -15,7 +15,16 @@ All-day events and events you declined are skipped.
 
 ## Install
 
-Requires macOS 14+ and Rust.
+Requires macOS 14+.
+
+Download the universal binary from the [latest release](https://github.com/simonharrer/iamlate/releases/latest):
+
+```sh
+curl -L https://github.com/simonharrer/iamlate/releases/latest/download/iamlate-macos-universal.tar.gz | tar -xz
+xattr -d com.apple.quarantine iamlate 2>/dev/null; mv iamlate /usr/local/bin/
+```
+
+Or build from source with Rust:
 
 ```sh
 cargo install --git https://github.com/simonharrer/iamlate
@@ -51,3 +60,7 @@ room.backup = https://meet.google.com/abc-defg-hij
 ```
 
 `account` matches either the account name or the calendar name shown in Calendar.app.
+
+## Releasing
+
+Push a tag like `v0.1.0`. GitHub Actions builds a universal (Apple Silicon + Intel) binary and attaches it to the release.
