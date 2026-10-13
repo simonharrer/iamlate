@@ -1,0 +1,14 @@
+[package]
+name = "iamlate"
+version = "0.1.0"
+edition = "2024"
+description = "Jump straight into your current meeting (Zoom, Teams, Google Meet) from the macOS calendar"
+license = "MIT"
+repository = "https://github.com/simonharrer/iamlate"
+
+[dependencies]
+block2 = "0.6"
+objc2 = "0.6"
+objc2-event-kit = "0.3"
+objc2-foundation = "0.3"
+regex = "1.13.1"
